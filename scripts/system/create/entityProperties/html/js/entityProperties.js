@@ -1,3 +1,10 @@
+//VERSION 2.0
+//  Modified by Alezia Kurdis on on 02/27/2020
+//  for "Project Athena"
+//  
+//  Addition of a tab mechanism instead of collapsible sections to reduce the scrolling.
+//
+//VERSION 1.0
 //  entityProperties.js
 //
 //  Created by Ryan Huffman on 13 Nov 2014
@@ -9,6 +16,8 @@
 
 /* global alert, augmentSpinButtons, clearTimeout, console, document, Element, 
    EventBridge, JSONEditor, openEventBridge, setTimeout, window, _, $ */
+
+var currentTab = "base";
 
 const DEGREES_TO_RADIANS = Math.PI / 180.0;
 
@@ -24,7 +33,7 @@ const PROPERTY_SELECTION_VISIBILITY = Object.freeze({
     SINGLE_SELECTION: 1,
     MULTIPLE_SELECTIONS: 2,
     MULTI_DIFF_SELECTIONS: 4,
-    ANY_SELECTIONS: 7, /* SINGLE_SELECTION | MULTIPLE_SELECTIONS | MULTI_DIFF_SELECTIONS */
+    ANY_SELECTIONS: 7 /* SINGLE_SELECTION | MULTIPLE_SELECTIONS | MULTI_DIFF_SELECTIONS */
 });
 
 // Multiple-selection behavior
@@ -34,12 +43,13 @@ const PROPERTY_MULTI_DISPLAY_MODE = Object.freeze({
      * Comma separated values
      * Limited for properties with type "string" or "textarea" and readOnly enabled
      */
-    COMMA_SEPARATED_VALUES: 1,
+    COMMA_SEPARATED_VALUES: 1
 });
 
 const GROUPS = [
     {
         id: "base",
+        label: "ENTITY",
         properties: [
             {
                 label: NO_SELECTION,
@@ -112,12 +122,12 @@ const GROUPS = [
                     lines: "Wireframe",
                 },
                 propertyID: "primitiveMode",
-            },
+            }
         ]
     },
     {
         id: "shape",
-        addToGroup: "base",
+        label: "SHAPE",        
         properties: [
             {
                 label: "Shape",
@@ -133,11 +143,21 @@ const GROUPS = [
                 type: "color",
                 propertyID: "color",
             },
+            {
+                label: "Alpha",
+                type: "number-draggable",
+                min: 0,
+                max: 1,
+                step: 0.01,
+                decimals: 2,
+                propertyID: "shapeAlpha",
+                propertyName: "alpha",
+            },            
         ]
     },
     {
         id: "text",
-        addToGroup: "base",
+        label: "TEXT",
         properties: [
             {
                 label: "Text",
@@ -220,12 +240,12 @@ const GROUPS = [
                 label: "Unlit",
                 type: "bool",
                 propertyID: "unlit",
-            },
+            }
         ]
     },
     {
         id: "zone",
-        addToGroup: "base",
+        label: "ZONE",
         properties: [
             {
                 label: "Shape Type",
@@ -255,7 +275,13 @@ const GROUPS = [
                 label: "Filter",
                 type: "string",
                 propertyID: "filterURL",
-            },
+            }
+        ]
+    },
+    {
+        id: "zone_key_light",
+        label: "ZONE KEY LIGHT",
+        properties: [
             {
                 label: "Key Light",
                 type: "dropdown",
@@ -324,7 +350,13 @@ const GROUPS = [
                 decimals: 2,
                 propertyID: "keyLight.shadowMaxDistance",
                 showPropertyRule: { "keyLightMode": "enabled" },
-            },
+            }    
+        ]
+    },    
+    {
+        id: "zone_skybox",
+        label: "ZONE SKYBOX",
+        properties: [
             {
                 label: "Skybox",
                 type: "dropdown",
@@ -342,7 +374,13 @@ const GROUPS = [
                 type: "string",
                 propertyID: "skybox.url",
                 showPropertyRule: { "skyboxMode": "enabled" },
-            },
+            }
+        ]
+    },
+    {
+        id: "zone_ambient_light",
+        label: "ZONE AMBIENT LIGHT",
+        properties: [
             {
                 label: "Ambient Light",
                 type: "dropdown",
@@ -371,7 +409,13 @@ const GROUPS = [
                              className: "black", onClick: copySkyboxURLToAmbientURL } ],
                 propertyID: "copyURLToAmbient",
                 showPropertyRule: { "ambientLightMode": "enabled" },
-            },
+            }
+        ]
+    },
+    {
+        id: "zone_haze",
+        label: "ZONE HAZE",
+        properties: [
             {
                 label: "Haze",
                 type: "dropdown",
@@ -454,7 +498,13 @@ const GROUPS = [
                 decimals: 0,
                 propertyID: "haze.hazeGlareAngle",
                 showPropertyRule: { "hazeMode": "enabled" },
-            },
+            }
+        ]
+    },
+    {
+        id: "zone_bloom",
+        label: "ZONE BLOOM",
+        properties: [
             {
                 label: "Bloom",
                 type: "dropdown",
@@ -490,19 +540,24 @@ const GROUPS = [
                 decimals: 3,
                 propertyID: "bloom.bloomSize",
                 showPropertyRule: { "bloomMode": "enabled" },
-            },
+            }
+        ]
+    },
+    {
+        id: "zone_avatar_priority",
+        label: "ZONE AVATAR PRIORITY",
+        properties: [
             {
                 label: "Avatar Priority",
                 type: "dropdown",
                 options: { inherit: "Inherit", crowd: "Crowd", hero: "Hero" },
                 propertyID: "avatarPriority",
-            },
-
+            }
         ]
     },
     {
         id: "model",
-        addToGroup: "base",
+        label: "MODEL",
         properties: [
             {
                 label: "Model",
@@ -587,12 +642,12 @@ const GROUPS = [
                 label: "Group Culled",
                 type: "bool",
                 propertyID: "groupCulled",
-            },
+            }
         ]
     },
     {
         id: "image",
-        addToGroup: "base",
+        label: "IMAGE",
         properties: [
             {
                 label: "Image",
@@ -630,12 +685,12 @@ const GROUPS = [
                 label: "Keep Aspect Ratio",
                 type: "bool",
                 propertyID: "keepAspectRatio",
-            },
+            }
         ]
     },
     {
         id: "web",
-        addToGroup: "base",
+        label: "WEB",
         properties: [
             {
                 label: "Source",
@@ -675,12 +730,12 @@ const GROUPS = [
                 type: "string",
                 propertyID: "scriptURL",
                 placeholder: "URL",
-            },
+            }
         ]
     },
     {
         id: "light",
-        addToGroup: "base",
+        label: "LIGHT",
         properties: [
             {
                 label: "Light Color",
@@ -726,12 +781,12 @@ const GROUPS = [
                 step: 0.01,
                 decimals: 2,
                 propertyID: "cutoff",
-            },
+            }
         ]
     },
     {
         id: "material",
-        addToGroup: "base",
+        label: "MATERIAL",
         properties: [
             {
                 label: "Material URL",
@@ -800,12 +855,12 @@ const GROUPS = [
                 label: "Material Repeat",
                 type: "bool",
                 propertyID: "materialRepeat",
-            },
+            }
         ]
     },
     {
         id: "grid",
-        addToGroup: "base",
+        label: "GRID",
         properties: [
             {
                 label: "Color",
@@ -833,12 +888,12 @@ const GROUPS = [
                 step: 0.01,
                 decimals: 2,
                 propertyID: "minorGridEvery",
-            },
+            }
         ]
     },
     {
         id: "particles",
-        addToGroup: "base",
+        label: "PARTICLES",
         properties: [
             {
                 label: "Emit",
@@ -864,13 +919,12 @@ const GROUPS = [
                 type: "texture",
                 propertyID: "particleTextures",
                 propertyName: "textures", // actual entity property name
-            },
+            }
         ]
     },
     {
         id: "particles_emit",
-        label: "EMIT",
-        isMinor: true,
+        label: "PARTICLES EMIT",
         properties: [
             {
                 label: "Emit Rate",
@@ -937,13 +991,12 @@ const GROUPS = [
                 label: "Trails",
                 type: "bool",
                 propertyID: "emitterShouldTrail",
-            },
+            }
         ]
     },
     {
         id: "particles_size",
-        label: "SIZE",
-        isMinor: true,
+        label: "PARTICLES SIZE",
         properties: [
             {
                 type: "triple",
@@ -972,7 +1025,7 @@ const GROUPS = [
                         decimals: 2,
                         propertyID: "radiusFinish",
                         fallbackProperty: "particleRadius",
-                    },
+                    }
                 ]
             },
             {
@@ -981,13 +1034,12 @@ const GROUPS = [
                 step: 0.01,
                 decimals: 2,
                 propertyID: "radiusSpread",
-            },
+            }
         ]
     },
     {
         id: "particles_color",
-        label: "COLOR",
-        isMinor: true,
+        label: "PARTICLES COLOR",
         properties: [
             {
                 type: "triple",
@@ -1011,7 +1063,7 @@ const GROUPS = [
                         type: "color",
                         propertyID: "colorFinish",
                         fallbackProperty: "color",
-                    },
+                    }
                 ]
             },
             {
@@ -1019,13 +1071,6 @@ const GROUPS = [
                 type: "color",
                 propertyID: "colorSpread",
             },
-        ]
-    },
-    {
-        id: "particles_alpha",
-        label: "ALPHA",
-        isMinor: true,
-        properties: [
             {
                 type: "triple",
                 label: "Alpha",
@@ -1053,7 +1098,7 @@ const GROUPS = [
                         decimals: 3,
                         propertyID: "alphaFinish",
                         fallbackProperty: "alpha",
-                    },
+                    }
                 ]
             },
             {
@@ -1062,13 +1107,12 @@ const GROUPS = [
                 step: 0.001,
                 decimals: 3,
                 propertyID: "alphaSpread",
-            },
+            }
         ]
     },
     {
-        id: "particles_acceleration",
-        label: "ACCELERATION",
-        isMinor: true,
+        id: "particles_behavior",
+        label: "PARTICLES BEHAVIOR",
         properties: [
             {
                 label: "Emit Acceleration",
@@ -1088,13 +1132,6 @@ const GROUPS = [
                 subLabels: [ "x", "y", "z" ],
                 propertyID: "accelerationSpread",
             },
-        ]
-    },
-    {
-        id: "particles_spin",
-        label: "SPIN",
-        isMinor: true,
-        properties: [
             {
                 type: "triple",
                 label: "Spin",
@@ -1128,7 +1165,7 @@ const GROUPS = [
                         unit: "deg",
                         propertyID: "spinFinish",
                         fallbackProperty: "particleSpin",
-                    },
+                    }
                 ]
             },
             {
@@ -1144,13 +1181,12 @@ const GROUPS = [
                 label: "Rotate with Entity",
                 type: "bool",
                 propertyID: "rotateWithEntity",
-            },
+            }
         ]
     },
     {
         id: "particles_constraints",
-        label: "CONSTRAINTS",
-        isMinor: true,
+        label: "PARTICLES CONSTRAINTS",
         properties: [
             {
                 type: "triple",
@@ -1174,7 +1210,7 @@ const GROUPS = [
                         multiplier: DEGREES_TO_RADIANS,
                         unit: "deg",
                         propertyID: "polarFinish",
-                    },
+                    }
                 ],
             },
             {
@@ -1199,7 +1235,7 @@ const GROUPS = [
                         multiplier: DEGREES_TO_RADIANS,
                         unit: "deg",
                         propertyID: "azimuthFinish",
-                    },
+                    }
                 ]
             }
         ]
@@ -1299,7 +1335,7 @@ const GROUPS = [
                 buttons: [ { id: "selection", label: "Selection to Grid", className: "black", onClick: moveSelectionToGrid },
                            { id: "all", label: "All to Grid", className: "black", onClick: moveAllToGrid } ],
                 propertyID: "alignToGrid",
-            },
+            }
         ]
     },
     {
@@ -1370,6 +1406,18 @@ const GROUPS = [
                 propertyID: "ignorePickIntersection",
             },
             {
+                label: "Lifetime",
+                type: "number",
+                unit: "s",
+                propertyID: "lifetime",
+            }
+        ]
+    },
+    {
+        id: "scripts",
+        label: "SCRIPTS",
+        properties: [
+            {
                 label: "Script",
                 type: "string",
                 buttons: [ { id: "reload", label: "F", className: "glyph", onClick: reloadScripts } ],
@@ -1392,19 +1440,13 @@ const GROUPS = [
                 selectionVisibility: PROPERTY_SELECTION_VISIBILITY.SINGLE_SELECTION,
             },
             {
-                label: "Lifetime",
-                type: "number",
-                unit: "s",
-                propertyID: "lifetime",
-            },
-            {
                 label: "User Data",
                 type: "textarea",
                 buttons: [ { id: "clear", label: "Clear User Data", className: "red", onClick: clearUserData }, 
                            { id: "edit", label: "Edit as JSON", className: "blue", onClick: newJSONEditor },
                            { id: "save", label: "Save User Data", className: "black", onClick: saveUserData } ],
                 propertyID: "userData",
-            },
+            }
         ]
     },
     {
@@ -1469,7 +1511,7 @@ const GROUPS = [
                 label: "Dynamic",
                 type: "bool",
                 propertyID: "dynamic",
-            },
+            }
         ]
     },
     {
@@ -1554,27 +1596,29 @@ const GROUPS = [
                 decimals: 4,
                 unit: "m/s<sup>2</sup>",
                 propertyID: "acceleration",
-            },
+            }
         ]
     },
 ];
 
 const GROUPS_PER_TYPE = {
-  None: [ 'base', 'spatial', 'behavior', 'collision', 'physics' ],
-  Shape: [ 'base', 'shape', 'spatial', 'behavior', 'collision', 'physics' ],
-  Text: [ 'base', 'text', 'spatial', 'behavior', 'collision', 'physics' ],
-  Zone: [ 'base', 'zone', 'spatial', 'behavior', 'physics' ],
-  Model: [ 'base', 'model', 'spatial', 'behavior', 'collision', 'physics' ],
-  Image: [ 'base', 'image', 'spatial', 'behavior', 'collision', 'physics' ],
-  Web: [ 'base', 'web', 'spatial', 'behavior', 'collision', 'physics' ],
-  Light: [ 'base', 'light', 'spatial', 'behavior', 'collision', 'physics' ],
-  Material: [ 'base', 'material', 'spatial', 'behavior' ],
-  ParticleEffect: [ 'base', 'particles', 'particles_emit', 'particles_size', 'particles_color', 'particles_alpha', 
-                    'particles_acceleration', 'particles_spin', 'particles_constraints', 'spatial', 'behavior', 'physics' ],
-  PolyLine: [ 'base', 'spatial', 'behavior', 'collision', 'physics' ],
-  PolyVox: [ 'base', 'spatial', 'behavior', 'collision', 'physics' ],
-  Grid: [ 'base', 'grid', 'spatial', 'behavior', 'physics' ],
-  Multiple: [ 'base', 'spatial', 'behavior', 'collision', 'physics' ],
+  None: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  Shape: [ 'base', 'shape', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  Text: [ 'base', 'text', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze', 
+            'zone_bloom', 'zone_avatar_priority', 'spatial', 'behavior', 'scripts', 'physics' ],
+  Model: [ 'base', 'model', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  Image: [ 'base', 'image', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  Web: [ 'base', 'web', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  Light: [ 'base', 'light', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  Material: [ 'base', 'material', 'spatial', 'behavior', 'scripts' ],
+  ParticleEffect: [ 'base', 'particles', 'particles_emit', 'particles_size', 'particles_color', 
+                    'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'scripts', 'physics' ],
+  PolyLine: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  PolyLine: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  PolyVox: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
+  Grid: [ 'base', 'grid', 'spatial', 'behavior', 'scripts', 'physics' ],
+  Multiple: [ 'base', 'spatial', 'behavior', 'scripts', 'collision', 'physics' ],
 };
 
 const EDITOR_TIMEOUT_DURATION = 1500;
@@ -1658,7 +1702,7 @@ function isFlagSet(value, flag) {
  */
 
 function getPropertyInputElement(propertyID) {
-    let property = properties[propertyID];          
+    let property = properties[propertyID];
     switch (property.data.type) {
         case 'string':
         case 'number':
@@ -1707,12 +1751,6 @@ function disableChildren(el, selector) {
 function enableProperties() {
     enableChildren(document.getElementById("properties-list"), ENABLE_DISABLE_SELECTOR);
     enableChildren(document, ".colpick");
-    
-    let elLocked = getPropertyInputElement("locked");
-    if (elLocked.checked === false) {
-        removeStaticUserData();
-        removeStaticMaterialData();
-    }
 }
 
 function disableProperties() {
@@ -1720,16 +1758,6 @@ function disableProperties() {
     disableChildren(document, ".colpick");
     for (let pickKey in colorPickers) {
         colorPickers[pickKey].colpickHide();
-    }
-    
-    let elLocked = getPropertyInputElement("locked");
-    if (elLocked.checked === true) {
-        if ($('#property-userData-editor').css('display') === "block") {
-            showStaticUserData();
-        }
-        if ($('#property-materialData-editor').css('display') === "block") {
-            showStaticMaterialData();
-        }
     }
 }
 
@@ -1743,7 +1771,7 @@ function setPropertyVisibility(property, visible) {
 
 function resetProperties() {
     for (let propertyID in properties) { 
-        let property = properties[propertyID];      
+        let property = properties[propertyID];
         let propertyData = property.data;
         
         switch (propertyData.type) {
@@ -1820,7 +1848,7 @@ function resetProperties() {
                 break;
             }
         }
-        
+
         let showPropertyRules = properties[propertyID].showPropertyRules;
         if (showPropertyRules !== undefined) {
             for (let propertyToHide in showPropertyRules) {
@@ -1842,9 +1870,15 @@ function resetServerScriptStatus() {
 function showGroupsForType(type) {
     if (type === "Box" || type === "Sphere") {
         showGroupsForTypes(["Shape"]);
+        showOnTheSamePage("Shape");
         return;
     }
+    if (type === "None") {
+        showGroupsForTypes(["None"]);
+        return;        
+    }
     showGroupsForTypes([type]);
+    showOnTheSamePage(type);
 }
 
 function getGroupsForTypes(types) {
@@ -1858,9 +1892,15 @@ function getGroupsForTypes(types) {
 function showGroupsForTypes(types) {
     Object.entries(elGroups).forEach(([groupKey, elGroup]) => {
         if (types.map(type => GROUPS_PER_TYPE[type].includes(groupKey)).every(function (hasGroup) { return hasGroup; })) {
-            elGroup.style.display = "block";
+            elGroup.style.display = "none";
+            if (types !== "None") {
+                document.getElementById("tab-" + groupKey).style.display = "block";
+            } else {
+                document.getElementById("tab-" + groupKey).style.display = "none";
+            }
         } else {
             elGroup.style.display = "none";
+            document.getElementById("tab-" + groupKey).style.display = "none";
         }
     });
 }
@@ -2257,7 +2297,7 @@ function updateCheckedSubProperty(propertyName, propertyMultiValue, subPropertyE
  * PROPERTY ELEMENT CREATION FUNCTIONS
  */
 
-function createStringProperty(property, elProperty) {    
+function createStringProperty(property, elProperty) {
     let elementID = property.elementID;
     let propertyData = property.data;
     
@@ -2270,12 +2310,12 @@ function createStringProperty(property, elProperty) {
                ${propertyData.readOnly ? 'readonly' : ''}/>
         `);
 
-    
+
     elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
     if (propertyData.onChange !== undefined) {
         elInput.addEventListener('change', propertyData.onChange);
     }
-    
+
 
     let elMultiDiff = document.createElement('span');
     elMultiDiff.className = "multi-diff";
@@ -2286,7 +2326,7 @@ function createStringProperty(property, elProperty) {
     if (propertyData.buttons !== undefined) {
         addButtons(elProperty, elementID, propertyData.buttons, false);
     }
-    
+
     return elInput;
 }
 
@@ -2294,9 +2334,9 @@ function createBoolProperty(property, elProperty) {
     let propertyName = property.name;
     let elementID = property.elementID;
     let propertyData = property.data;
-    
+
     elProperty.className = "checkbox";
-                        
+
     if (propertyData.glyph !== undefined) {
         let elSpan = document.createElement('span');
         elSpan.innerHTML = propertyData.glyph;
@@ -2525,7 +2565,7 @@ function createVec3Property(property, elProperty) {
     let propertyData = property.data;
 
     elProperty.className = propertyData.vec3Type + " fstuple";
-    
+
     let elNumberX = createTupleNumberInput(property, propertyData.subLabels[VECTOR_ELEMENTS.X_NUMBER]);
     let elNumberY = createTupleNumberInput(property, propertyData.subLabels[VECTOR_ELEMENTS.Y_NUMBER]);
     let elNumberZ = createTupleNumberInput(property, propertyData.subLabels[VECTOR_ELEMENTS.Z_NUMBER]);
@@ -2540,7 +2580,7 @@ function createVec3Property(property, elProperty) {
     elNumberX.setMultiDiffStepFunction(createMultiDiffStepFunction(property, 'x'));
     elNumberY.setMultiDiffStepFunction(createMultiDiffStepFunction(property, 'y'));
     elNumberZ.setMultiDiffStepFunction(createMultiDiffStepFunction(property, 'z'));
-    
+
     let elResult = [];
     elResult[VECTOR_ELEMENTS.X_NUMBER] = elNumberX;
     elResult[VECTOR_ELEMENTS.Y_NUMBER] = elNumberY;
@@ -2548,11 +2588,11 @@ function createVec3Property(property, elProperty) {
     return elResult;
 }
 
-function createVec2Property(property, elProperty) {  
+function createVec2Property(property, elProperty) {
     let propertyData = property.data;
     
     elProperty.className = propertyData.vec2Type + " fstuple";
-                        
+
     let elTuple = document.createElement('div');
     elTuple.className = "tuple";
     
@@ -2589,19 +2629,19 @@ function createColorProperty(property, elProperty) {
     let propertyName = property.name;
     let elementID = property.elementID;
     let propertyData = property.data;
-    
+
     elProperty.className += " rgb fstuple";
-    
+
     let elColorPicker = document.createElement('div');
     elColorPicker.className = "color-picker";
     elColorPicker.setAttribute("id", elementID);
-    
+
     let elTuple = document.createElement('div');
     elTuple.className = "tuple";
-    
+
     elProperty.appendChild(elColorPicker);
     elProperty.appendChild(elTuple);
-    
+
     if (propertyData.min === undefined) {
         propertyData.min = COLOR_MIN;
     }
@@ -2611,19 +2651,19 @@ function createColorProperty(property, elProperty) {
     if (propertyData.step === undefined) {
         propertyData.step = COLOR_STEP;
     }
-    
+
     let elNumberR = createTupleNumberInput(property, "red");
     let elNumberG = createTupleNumberInput(property, "green");
     let elNumberB = createTupleNumberInput(property, "blue");
     elTuple.appendChild(elNumberR.elDiv);
     elTuple.appendChild(elNumberG.elDiv);
     elTuple.appendChild(elNumberB.elDiv);
-    
+
     let valueChangeFunction = createEmitColorPropertyUpdateFunction(property);
     elNumberR.setValueChangeFunction(valueChangeFunction);
     elNumberG.setValueChangeFunction(valueChangeFunction);
     elNumberB.setValueChangeFunction(valueChangeFunction);
-    
+
     let colorPickerID = "#" + elementID;
     colorPickers[colorPickerID] = $(colorPickerID).colpick({
         colorScheme: 'dark',
@@ -2652,7 +2692,7 @@ function createColorProperty(property, elProperty) {
             }
         }
     });
-    
+
     let elResult = [];
     elResult[COLOR_ELEMENTS.COLOR_PICKER] = elColorPicker;
     elResult[COLOR_ELEMENTS.RED_NUMBER] = elNumberR;
@@ -2677,26 +2717,26 @@ function createDropdownProperty(property, propertyID, elProperty) {
         option.text = propertyData.options[optionKey];
         elInput.add(option);
     }
-    
+
     elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
 
     elProperty.appendChild(elInput);
-    
+
     return elInput;
 }
 
-function createTextareaProperty(property, elProperty) {   
+function createTextareaProperty(property, elProperty) {
     let elementID = property.elementID;
     let propertyData = property.data;
-    
+
     elProperty.className = "textarea";
-    
+
     let elInput = document.createElement('textarea');
     elInput.setAttribute("id", elementID);
     if (propertyData.readOnly) {
         elInput.readOnly = true;
-    }                   
-    
+    }
+
     elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
 
     let elMultiDiff = document.createElement('span');
@@ -2704,42 +2744,42 @@ function createTextareaProperty(property, elProperty) {
 
     elProperty.appendChild(elInput);
     elProperty.appendChild(elMultiDiff);
-                        
+
     if (propertyData.buttons !== undefined) {
         addButtons(elProperty, elementID, propertyData.buttons, true);
     }
-    
+
     return elInput;
 }
 
-function createIconProperty(property, elProperty) { 
+function createIconProperty(property, elProperty) {
     let elementID = property.elementID;
 
     elProperty.className = "value";
-    
+
     let elSpan = document.createElement('span');
     elSpan.setAttribute("id", elementID + "-icon");
     elSpan.className = 'icon';
 
     elProperty.appendChild(elSpan);
-    
+
     return elSpan;
 }
 
-function createTextureProperty(property, elProperty) { 
+function createTextureProperty(property, elProperty) {
     let elementID = property.elementID;
-    
+
     elProperty.className = "texture";
-    
+
     let elDiv = document.createElement("div");
     let elImage = document.createElement("img");
     elDiv.className = "texture-image no-texture";
     elDiv.appendChild(elImage);
-    
+
     let elInput = document.createElement('input');
     elInput.setAttribute("id", elementID);
     elInput.setAttribute("type", "text"); 
-    
+
     let imageLoad = function(url) {
         elDiv.style.display = null;
         if (url.slice(0, 5).toLowerCase() === "atp:/") {
@@ -2776,7 +2816,7 @@ function createTextureProperty(property, elProperty) {
     elMultiDiff.className = "multi-diff";
     elProperty.appendChild(elMultiDiff);
     elProperty.appendChild(elDiv);
-   
+
     let elResult = [];
     elResult[TEXTURE_ELEMENTS.IMAGE] = elImage;
     elResult[TEXTURE_ELEMENTS.TEXT_INPUT] = elInput;
@@ -2792,23 +2832,23 @@ function createButtonsProperty(property, elProperty) {
     if (propertyData.buttons !== undefined) {
         addButtons(elProperty, elementID, propertyData.buttons, false);
     }
-    
+
     return elProperty;
 }
 
 function createDynamicMultiselectProperty(property, elProperty) {
     let elementID = property.elementID;
     let propertyData = property.data;
-        
+
     elProperty.className = "dynamic-multiselect";
-    
+
     let elDivOptions = document.createElement('div');
     elDivOptions.setAttribute("id", elementID + "-options");
     elDivOptions.style = "overflow-y:scroll;max-height:160px;";
-    
+
     let elDivButtons = document.createElement('div');
     elDivButtons.setAttribute("id", elDivOptions.getAttribute("id") + "-buttons");
-        
+
     let elLabel = document.createElement('label');
     elLabel.innerText = "No Options";
     elDivOptions.appendChild(elLabel);
@@ -2816,10 +2856,10 @@ function createDynamicMultiselectProperty(property, elProperty) {
     let buttons = [ { id: "selectAll", label: "Select All", className: "black", onClick: selectAllMaterialTarget }, 
                     { id: "clearAll", label: "Clear All", className: "black", onClick: clearAllMaterialTarget } ];
     addButtons(elDivButtons, elementID, buttons, false);
-    
+
     elProperty.appendChild(elDivOptions);
     elProperty.appendChild(elDivButtons);
-    
+
     return elDivOptions;
 }
 
@@ -2837,13 +2877,13 @@ function createTupleNumberInput(property, subLabel) {
     let propertyElementID = property.elementID;
     let propertyData = property.data;
     let elementID = propertyElementID + "-" + subLabel.toLowerCase();
-    
+
     let elLabel = document.createElement('label');
     elLabel.className = "sublabel " + subLabel;
     elLabel.innerText = subLabel[0].toUpperCase() + subLabel.slice(1);
     elLabel.setAttribute("for", elementID);
     elLabel.style.visibility = "visible";
-    
+
     let dragStartFunction = createDragStartFunction(property);
     let dragEndFunction = createDragEndFunction(property);
     let elDraggableNumber = new DraggableNumber(propertyData.min, propertyData.max, propertyData.step, 
@@ -2851,14 +2891,14 @@ function createTupleNumberInput(property, subLabel) {
     elDraggableNumber.elInput.setAttribute("id", elementID);
     elDraggableNumber.elDiv.className += " fstuple";
     elDraggableNumber.elDiv.insertBefore(elLabel, elDraggableNumber.elLeftArrow);
-    
+
     return elDraggableNumber;
 }
 
 function addButtons(elProperty, propertyID, buttons, newRow) {
     let elDiv = document.createElement('div');
     elDiv.className = "row";
-    
+
     buttons.forEach(function(button) {
         let elButton = document.createElement('input');
         elButton.className = button.className;
@@ -2880,7 +2920,7 @@ function addButtons(elProperty, propertyID, buttons, newRow) {
 }
 
 function createProperty(propertyData, propertyElementID, propertyName, propertyID, elProperty) {
-    let property = { 
+    let property = {
         data: propertyData, 
         elementID: propertyElementID, 
         name: propertyName,
@@ -3171,19 +3211,6 @@ function hideUserDataSaved() {
     $('#property-userData-saved').hide();
 }
 
-function showStaticUserData() {
-    if (editor !== null) {
-        let $propertyUserDataStatic = $('#property-userData-static');
-        $propertyUserDataStatic.show();
-        $propertyUserDataStatic.css('height', $('#property-userData-editor').height());
-        $propertyUserDataStatic.text(editor.getText());
-    }
-}
-
-function removeStaticUserData() {
-    $('#property-userData-static').hide();
-}
-
 function setEditorJSON(json) {
     editor.set(json);
     if (editor.hasOwnProperty('expandAll')) {
@@ -3336,19 +3363,6 @@ function hideMaterialDataSaved() {
     $('#property-materialData-saved').hide();
 }
 
-function showStaticMaterialData() {
-    if (materialEditor !== null) {
-        let $propertyMaterialDataStatic = $('#property-materialData-static');
-        $propertyMaterialDataStatic.show();
-        $propertyMaterialDataStatic.css('height', $('#property-materialData-editor').height());
-        $propertyMaterialDataStatic.text(materialEditor.getText());
-    }
-}
-
-function removeStaticMaterialData() {
-    $('#property-materialData-static').hide();
-}
-
 function setMaterialEditorJSON(json) {
     materialEditor.set(json);
     if (materialEditor.hasOwnProperty('expandAll')) {
@@ -3471,15 +3485,15 @@ function requestMaterialTarget() {
         entityID: getFirstSelectedID(),
     }));
 }
- 
+
 function setMaterialTargetData(materialTargetData) {
     let elDivOptions = getPropertyInputElement("parentMaterialName");
     resetDynamicMultiselectProperty(elDivOptions);
-    
+
     if (materialTargetData === undefined) {
         return;
     }
-    
+
     elDivOptions.firstChild.style.display = "none"; // hide "No Options" text
     elDivOptions.parentNode.lastChild.style.display = null; // show Select/Clear all buttons
 
@@ -3487,7 +3501,7 @@ function setMaterialTargetData(materialTargetData) {
     for (let i = 0; i < numMeshes; ++i) {
         addMaterialTarget(elDivOptions, i, false);
     }
-    
+
     let materialNames = materialTargetData.materialNames;
     let materialNamesAdded = [];
     for (let i = 0; i < materialNames.length; ++i) {
@@ -3497,7 +3511,7 @@ function setMaterialTargetData(materialTargetData) {
             materialNamesAdded.push(materialName);
         }
     }
-    
+
     materialTargetPropertyUpdate(elDivOptions.propertyValue);
 }
 
@@ -3505,12 +3519,12 @@ function addMaterialTarget(elDivOptions, targetID, isMaterialName) {
     let elementID = elDivOptions.getAttribute("id");
     elementID += isMaterialName ? "-material-" : "-mesh-";
     elementID += targetID;
-    
+
     let elDiv = document.createElement('div');
     elDiv.className = "materialTargetDiv";
     elDiv.onclick = onToggleMaterialTarget;
     elDivOptions.appendChild(elDiv);
-    
+
     let elInput = document.createElement('input');
     elInput.className = "materialTargetInput";
     elInput.setAttribute("type", "checkbox");
@@ -3518,12 +3532,12 @@ function addMaterialTarget(elDivOptions, targetID, isMaterialName) {
     elInput.setAttribute("targetID", targetID);
     elInput.setAttribute("isMaterialName", isMaterialName);
     elDiv.appendChild(elInput);
-    
+
     let elLabel = document.createElement('label');
     elLabel.setAttribute("for", elementID);
     elLabel.innerText = isMaterialName ? "Material " + targetID : "Mesh Index " + targetID;
     elDiv.appendChild(elLabel);
-    
+
     return elDiv;
 }
 
@@ -3556,7 +3570,7 @@ function clearAllMaterialTarget() {
 function sendMaterialTargetProperty() {
     let elDivOptions = getPropertyInputElement("parentMaterialName");   
     let elInputs = elDivOptions.getElementsByClassName("materialTargetInput");
-    
+
     let materialTargetList = [];
     for (let i = 0; i < elInputs.length; ++i) {
         let elInput = elInputs[i];
@@ -3569,26 +3583,26 @@ function sendMaterialTargetProperty() {
             }
         }
     }
-    
+
     let propertyValue = materialTargetList.join(",");
     if (propertyValue.length > 1) {
         propertyValue = "[" + propertyValue + "]";
     }
-    
+
     updateProperty("parentMaterialName", propertyValue, false);
 }
 
 function materialTargetPropertyUpdate(propertyValue) {
     let elDivOptions = getPropertyInputElement("parentMaterialName");
     let elInputs = elDivOptions.getElementsByClassName("materialTargetInput");
-    
+
     if (propertyValue.startsWith('[')) {
         propertyValue = propertyValue.substring(1, propertyValue.length);
     }
     if (propertyValue.endsWith(']')) {
         propertyValue = propertyValue.substring(0, propertyValue.length - 1);
     }
-    
+
     let materialTargets = propertyValue.split(",");
     for (let i = 0; i < elInputs.length; ++i) {
         let elInput = elInputs[i];
@@ -3599,7 +3613,7 @@ function materialTargetPropertyUpdate(propertyValue) {
         }
         elInput.checked = materialTargets.indexOf(materialTargetName) >= 0;
     }
-    
+
     elDivOptions.propertyValue = propertyValue;
 }
 
@@ -3678,6 +3692,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
         const shownGroups = getGroupsForTypes(entityTypes);
         showGroupsForTypes(entityTypes);
+        showOnTheSamePage(entityTypes);
 
         const lockedMultiValue = getMultiplePropertyValue('locked');
 
@@ -3888,7 +3903,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
             }
         }
-        if (json !== null) {
+        if (json !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
             if (editor === null) {
                 createJSONEditor();
             }
@@ -3920,7 +3935,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
             }
         }
-        if (materialJson !== null) {
+        if (materialJson !== null && !lockedMultiValue.isMultiDiffValue && !lockedMultiValue.value) {
             if (materialEditor === null) {
                 createJSONMaterialEditor();
             }
@@ -3954,44 +3969,35 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
 function loaded() {
     openEventBridge(function() {
-        let elPropertiesList = document.getElementById("properties-list");
-        
+        let elPropertiesList = document.getElementById("properties-pages");
+        let elTabs = document.getElementById("tabs");
+
         GROUPS.forEach(function(group) {
             let elGroup;
-            if (group.addToGroup !== undefined) {
-                let fieldset = document.getElementById("properties-" + group.addToGroup);
-                elGroup = document.createElement('div');
-                fieldset.appendChild(elGroup);
-            } else {
-                elGroup = document.createElement('div');
-                elGroup.className = 'section ' + (group.isMinor ? "minor" : "major");
-                elGroup.setAttribute("id", "properties-" + group.id);
-                elPropertiesList.appendChild(elGroup);
-            }       
+
+            elGroup = document.createElement('div');
+            elGroup.className = 'section ' + "major";
+            elGroup.setAttribute("id", "properties-" + group.id);
+            elPropertiesList.appendChild(elGroup);
 
             if (group.label !== undefined) {
                 let elLegend = document.createElement('div');
-                elLegend.className = "section-header";
-
-                elLegend.appendChild(createElementFromHTML(`<div class="label">${group.label}</div>`));
-
-                let elSpan = document.createElement('span');
-                elSpan.className = "collapse-icon";
-                elSpan.innerText = "M";
-                elLegend.appendChild(elSpan);
+                elLegend.className = "tab-section-header";
+                elLegend.appendChild(createElementFromHTML(`<div class="labelTabHeader">${group.label}</div>`));
                 elGroup.appendChild(elLegend);
+                elTabs.appendChild(createElementFromHTML('<button id="tab-'+ group.id +'" onclick="showPage(' + "'" + group.id  + "'" + ');"><img src="tabs/'+ group.id +'.png"></button>'));
             }
-                
+
             group.properties.forEach(function(propertyData) {
                 let propertyType = propertyData.type;
-                let propertyID = propertyData.propertyID;               
+                let propertyID = propertyData.propertyID;
                 let propertyName = propertyData.propertyName !== undefined ? propertyData.propertyName : propertyID;
                 let propertySpaceMode = propertyData.spaceMode !== undefined ? propertyData.spaceMode : PROPERTY_SPACE_MODE.ALL;
                 let propertyElementID = "property-" + propertyID;
                 propertyElementID = propertyElementID.replace('.', '-');
-                
+
                 let elContainer, elLabel;
-                
+
                 if (propertyData.replaceID === undefined) {
                     // Create subheader, or create new property and append it.
                     if (propertyType === "sub-header") {
@@ -4081,15 +4087,15 @@ function loaded() {
                     property.elContainer = elContainer;
                     property.spaceMode = propertySpaceMode;
                     property.group_id = group.id;
-                    
+
                     if (property.type !== 'placeholder') {
                         properties[propertyID] = property;
-                    }           
+                    }
                     if (propertyData.type === 'number' || propertyData.type === 'number-draggable' || 
                         propertyData.type === 'vec2' || propertyData.type === 'vec3' || propertyData.type === 'rect') {
                         propertyRangeRequests.push(propertyID);
                     }
-                    
+
                     let showPropertyRule = propertyData.showPropertyRule;
                     if (showPropertyRule !== undefined) {
                         let dependentProperty = Object.keys(showPropertyRule)[0];
@@ -4104,15 +4110,12 @@ function loaded() {
                     }
                 }
             });
-            
+
             elGroups[group.id] = elGroup;
         });
 
-        let minorSections = document.querySelectorAll(".section.minor");
-        minorSections[minorSections.length - 1].className += " last";
-
         updateVisibleSpaceModeProperties();
-        
+
         if (window.EventBridge !== undefined) {
             EventBridge.scriptEventReceived.connect(function(data) {
                 data = JSON.parse(data);
@@ -4191,7 +4194,7 @@ function loaded() {
             EventBridge.emitWebEvent(JSON.stringify({ type: 'tooltipsRequest' }));
             EventBridge.emitWebEvent(JSON.stringify({ type: 'propertyRangeRequest', properties: propertyRangeRequests }));
         }
-        
+
         // Server Script Status
         let elServerScriptStatusOuter = document.getElementById('div-property-serverScriptStatus');
         let elServerScriptStatusContainer = document.getElementById('div-property-serverScriptStatus').childNodes[1];
@@ -4200,7 +4203,7 @@ function loaded() {
         let elServerScriptStatus = document.createElement('div');
         elServerScriptStatus.setAttribute("id", serverScriptStatusElementID);
         elServerScriptStatusContainer.appendChild(elServerScriptStatus);
-        
+
         // Server Script Error
         let elServerScripts = getPropertyInputElement("serverScripts");
         let elDiv = document.createElement('div');
@@ -4210,18 +4213,16 @@ function loaded() {
         elServerScriptError.setAttribute("id", serverScriptErrorElementID);
         elDiv.appendChild(elServerScriptError);
         elServerScriptStatusContainer.appendChild(elDiv);
-        
+
         let elScript = getPropertyInputElement("script");
         elScript.parentNode.className = "url refresh";
         elServerScripts.parentNode.className = "url refresh";
-            
+
         // User Data
         let userDataProperty = properties["userData"];
         let elUserData = userDataProperty.elInput;
         let userDataElementID = userDataProperty.elementID;
         elDiv = elUserData.parentNode;
-        let elStaticUserData = document.createElement('div');
-        elStaticUserData.setAttribute("id", userDataElementID + "-static");
         let elUserDataEditor = document.createElement('div');
         elUserDataEditor.setAttribute("id", userDataElementID + "-editor");
         let elUserDataEditorStatus = document.createElement('div');
@@ -4230,17 +4231,14 @@ function loaded() {
         elUserDataSaved.setAttribute("id", userDataElementID + "-saved");
         elUserDataSaved.innerText = "Saved!";
         elDiv.childNodes[JSON_EDITOR_ROW_DIV_INDEX].appendChild(elUserDataSaved);
-        elDiv.insertBefore(elStaticUserData, elUserData);
         elDiv.insertBefore(elUserDataEditor, elUserData);
         elDiv.insertBefore(elUserDataEditorStatus, elUserData);
-        
+
         // Material Data
         let materialDataProperty = properties["materialData"];
         let elMaterialData = materialDataProperty.elInput;
         let materialDataElementID = materialDataProperty.elementID;
         elDiv = elMaterialData.parentNode;
-        let elStaticMaterialData = document.createElement('div');
-        elStaticMaterialData.setAttribute("id", materialDataElementID + "-static");
         let elMaterialDataEditor = document.createElement('div');
         elMaterialDataEditor.setAttribute("id", materialDataElementID + "-editor");
         let elMaterialDataEditorStatus = document.createElement('div');
@@ -4249,26 +4247,9 @@ function loaded() {
         elMaterialDataSaved.setAttribute("id", materialDataElementID + "-saved");
         elMaterialDataSaved.innerText = "Saved!";
         elDiv.childNodes[JSON_EDITOR_ROW_DIV_INDEX].appendChild(elMaterialDataSaved);
-        elDiv.insertBefore(elStaticMaterialData, elMaterialData);
         elDiv.insertBefore(elMaterialDataEditor, elMaterialData);
         elDiv.insertBefore(elMaterialDataEditorStatus, elMaterialData);
-        
-        // Collapsible sections
-        let elCollapsible = document.getElementsByClassName("collapse-icon");
 
-        let toggleCollapsedEvent = function(event) {
-            let element = this.parentNode.parentNode;
-            let isCollapsed = element.dataset.collapsed !== "true";
-            element.dataset.collapsed = isCollapsed ? "true" : false;
-            element.setAttribute("collapsed", isCollapsed ? "true" : "false");
-            this.textContent = isCollapsed ? "L" : "M";
-        };
-
-        for (let collapseIndex = 0, numCollapsibles = elCollapsible.length; collapseIndex < numCollapsibles; ++collapseIndex) {
-            let curCollapsibleElement = elCollapsible[collapseIndex];
-            curCollapsibleElement.addEventListener("click", toggleCollapsedEvent, true);
-        }
-        
         // Textarea scrollbars
         let elTextareas = document.getElementsByTagName("TEXTAREA");
 
@@ -4285,7 +4266,7 @@ function loaded() {
             event; mouseup is a partial stand-in but doesn't handle resizing if mouse moves outside textarea rectangle. */
             curTextAreaElement.addEventListener("mouseup", textareaOnChangeEvent, false);
         }
-        
+
         // Dropdowns
         // For each dropdown the following replacement is created in place of the original dropdown...
         // Structure created:
@@ -4297,7 +4278,7 @@ function loaded() {
         //              <li>...</li>
         //          </ul>
         //      </dd>
-        //  </dl>    
+        //  </dl>
         let elDropdowns = document.getElementsByTagName("select");
         for (let dropDownIndex = 0; dropDownIndex < elDropdowns.length; ++dropDownIndex) {
             let elDropdown = elDropdowns[dropDownIndex];
@@ -4346,7 +4327,7 @@ function loaded() {
                 li.addEventListener("click", setDropdownValue);
                 ul.appendChild(li);
             }
-            
+
             let propertyID = elDropdown.getAttribute("propertyID");
             let property = properties[propertyID];
             property.elInput = dt;
@@ -4407,14 +4388,14 @@ function loaded() {
                 }
             }));
         }, false);
-        
+
         window.onblur = function() {
             // Fake a change event
             let ev = document.createEvent("HTMLEvents");
             ev.initEvent("change", true, true);
             document.activeElement.dispatchEvent(ev);
         };
-        
+
         // For input and textarea elements, select all of the text on focus
         let els = document.querySelectorAll("input, textarea");
         for (let i = 0; i < els.length; ++i) {
@@ -4422,12 +4403,14 @@ function loaded() {
                 e.target.select();
             };
         }
-        
-        bindAllNonJSONEditorElements(); 
+
+        bindAllNonJSONEditorElements();
 
         showGroupsForType("None");
+        showPage("base");
         resetProperties();
-        disableProperties();        
+        disableProperties();
+
     });
 
     augmentSpinButtons();
@@ -4441,4 +4424,31 @@ function loaded() {
     setTimeout(function() {
         EventBridge.emitWebEvent(JSON.stringify({ type: 'propertiesPageReady' }));
     }, 1000);
+}
+
+function showOnTheSamePage(entityType) {
+    let numberOfTypes = entityType.length;
+    let matchingType = 0;
+    for (let i = 0; i < numberOfTypes; i++) {
+        if (GROUPS_PER_TYPE[entityType[i]].includes(currentTab)) {
+            matchingType = matchingType + 1;
+        }
+    }
+    if (matchingType !== numberOfTypes) {
+        currentTab = "base";
+    }
+    showPage(currentTab);
+}
+
+function showPage(id) {
+    currentTab = id;
+    Object.entries(elGroups).forEach(([groupKey, elGroup]) => {
+        if (groupKey === id) {
+            elGroup.style.display = "block";
+            document.getElementById("tab-" + groupKey).style.backgroundColor = "#2E2E2E";
+        } else {
+            elGroup.style.display = "none";
+            document.getElementById("tab-" + groupKey).style.backgroundColor = "#404040";
+        }
+    });
 }
