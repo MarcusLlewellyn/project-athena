@@ -69,12 +69,12 @@ void SpacemouseManager::deactivate() {
     userInputMapper->removeDevice(deviceid);
 }
 
-void SpacemouseManager::pluginFocusOutEvent() { 
-    instance->focusOutEvent(); 
+void SpacemouseManager::pluginFocusOutEvent() {
+    instance->focusOutEvent();
 }
 
 void SpacemouseManager::pluginUpdate(float deltaTime, const controller::InputCalibrationData& inputCalibrationData) {
-    
+
 }
 
 SpacemouseDevice::SpacemouseDevice() : InputDevice(SpacemouseManager::NAME)
@@ -848,7 +848,7 @@ void SpacemouseManager::init() {
         // A separate API call is required to capture buttons beyond the first 8
         SetConnexionClientButtonMask(fConnexionClientID, kConnexionMaskAllButtons);
 
-        // use default switches 
+        // use default switches
         ConnexionClientControl(fConnexionClientID, kConnexionCtlSetSwitches, kConnexionSwitchesDisabled, NULL);
 
         if (Is3dmouseAttached() && instance->getDeviceID() == controller::Input::INVALID_DEVICE) {
